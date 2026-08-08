@@ -1,0 +1,49 @@
+name: Build FPS Booster
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Android ARM64
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Android NDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK
+        run: sdkmanager "ndk;27.2.12479018"
+
+      - name: Configure CMake
+        run: |
+          cmake -S . \
+            -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-26
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Prepare output
+        run: |
+          mkdir -p output
+          cp build/libfps_booster.so output/libfps_booster.so
+          cp README.md output/README.md
+
+      - name: Upload FPS Booster
+        uses: actions/upload-artifact@v4
+        with:
+          name: FPS-Booster-arm64
+          path: output/
